@@ -117,22 +117,22 @@ async def handle_event(ws: _Bot, msg: MessageReceive, is_http: bool = False):
 
             # 如果没有匹配的 persona 配置，直接返回，不执行 AI 处理
             if persona_name is None and memory_session == "按人格配置":
-                return
-
-            try:
-                if is_enable_memory and memory_config.observer_enabled and "被动感知" in memory_mode:
-                    asyncio.create_task(
-                        observe(
-                            content=event.raw_text,
-                            speaker_id=str(event.user_id),
-                            group_id=str(event.group_id or event.user_id),
-                            bot_self_id=str(event.bot_self_id),
-                            observer_blacklist=memory_config.observer_blacklist,
-                            message_type="group_msg" if event.group_id else "private_msg",
+                pass
+            else:
+                try:
+                    if is_enable_memory and memory_config.observer_enabled and "被动感知" in memory_mode:
+                        asyncio.create_task(
+                            observe(
+                                content=event.raw_text,
+                                speaker_id=str(event.user_id),
+                                group_id=str(event.group_id or event.user_id),
+                                bot_self_id=str(event.bot_self_id),
+                                observer_blacklist=memory_config.observer_blacklist,
+                                message_type="group_msg" if event.group_id else "private_msg",
+                            )
                         )
-                    )
-            except Exception:
-                pass  # Observer 失败不应影响主流程
+                except Exception:
+                    pass  # Observer 失败不应影响主流程
         # ============================================
 
     if event.user_pm == 0:
