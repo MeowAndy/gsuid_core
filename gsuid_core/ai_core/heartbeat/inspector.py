@@ -282,10 +282,15 @@ class HeartbeatInspector:
         if not meta:
             logger.debug(f"🫀 [Heartbeat] 会话 {event} 文本生成为空，放弃发送")
             return
-        message, reason = meta[0], meta[1]
+        mood, message = meta[0], meta[1]
 
         # 6. 发送阶段
-        await self._send_proactive_message(event, user_id, message, reason)
+        await self._send_proactive_message(
+            event,
+            user_id,
+            message,
+            mood,
+        )
 
     def _get_history(self, event: Event) -> List[Any]:
         """获取会话的全部历史记录"""
