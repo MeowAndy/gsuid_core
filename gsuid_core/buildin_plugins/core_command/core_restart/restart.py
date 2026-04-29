@@ -75,16 +75,26 @@ async def restart_genshinuid(
 
     await core_shutdown_execute()
 
-    if platform.system() == "Linux":
-        subprocess.Popen(
-            f"kill -9 {pid} ; sleep 1 ; {get_restart_command()}",
-            shell=True,
+    if platform.system() in ("Linux", "Darwin"):
+        # In tmux deployments, the GS process is the pane's foreground process.
+        # Do not call `tmux respawn-pane -k` directly from this foreground process:
+        # killing the pane may also interrupt that tmux client before it completes.
+        # Start a detached helper first; the helper waits briefly, then asks the
+        # tmux server to respawn this same pane with `uv run core` as foreground.
+        tmux_target = os.environ.get("TMUX_PANE") or "gs:0.0"
+        restart_command = get_restart_command()
+        helper_cmd = (
+            "sleep 1; "
+            f"tmux respawn-pane -k -t {tmux_target!r} "
+            "-c /root/gs/gsuid_core "
+            f"{('exec ' + restart_command)!r}"
         )
-    elif platform.system() == "Darwin":
-        # macOS (Darwin)
         subprocess.Popen(
-            f"kill -9 {pid} ; sleep 1 ; {get_restart_command()}",
-            shell=True,
+            ["bash", "-lc", helper_cmd],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
         )
     else:
         # Windows
